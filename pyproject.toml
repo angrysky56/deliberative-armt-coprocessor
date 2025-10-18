@@ -1,0 +1,75 @@
+[project]
+name = "darmt"
+version = "0.1.0"
+description = "Deliberative ARMT Co-Processor: Synergizing Memory and Reasoning with Adaptive Compute"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "Ty", email = "your.email@example.com"}
+]
+keywords = ["deep-learning", "transformers", "memory", "reasoning", "armt", "long-context"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.9.0",
+    "transformers>=4.57.1",
+    "numpy>=2.3.4",
+    "scipy>=1.16.2",
+    "einops>=0.8.1",
+    "tqdm>=4.67.1",
+    "tensorboard>=2.19.0",
+    "matplotlib>=3.10.0",
+    "seaborn>=0.13.2",
+    "pandas>=2.2.4",
+    "pyyaml>=6.0.2",
+    "rich>=13.9.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "black>=24.10.0",
+    "isort>=5.13.2",
+    "mypy>=1.15.0",
+    "ruff>=0.8.6",
+]
+jax = [
+    "jax[cuda12]>=0.8.0",
+    "flax>=0.12.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=src/darmt --cov-report=html --cov-report=term"
