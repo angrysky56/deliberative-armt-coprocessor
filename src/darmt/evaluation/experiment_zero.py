@@ -32,26 +32,26 @@ from darmt.evaluation.synthetic_tasks import (
 class Experiment0Config:
     """Configuration for Experiment 0."""
 
-    # Model architecture
-    hidden_size: int = 768
-    num_heads: int = 12
+    # Model architecture - Reduced for 12GB GPU
+    hidden_size: int = 512  # Reduced from 768
+    num_heads: int = 8      # Reduced from 12
     vocab_size: int = 32000
 
     # ARMT baseline (Config A)
-    armt_layers: int = 12
-    num_mem_tokens: int = 32
+    armt_layers: int = 6    # Reduced from 12
+    num_mem_tokens: int = 16  # Reduced from 32
 
     # Unified model (Config B)
-    unified_layers: int = 18  # Should match total of ARMT + Coprocessor
+    unified_layers: int = 9  # Reduced from 18 (should match total of ARMT + Coprocessor)
 
     # Dual architecture (Config C)
-    coprocessor_layers: int = 6
+    coprocessor_layers: int = 3  # Reduced from 6
 
-    # Training/evaluation
-    batch_size: int = 4
-    segment_length: int = 1024
-    num_segments: int = 10
-    num_latents: int = 32
+    # Training/evaluation - Reduced for memory
+    batch_size: int = 2      # Reduced from 4
+    segment_length: int = 512  # Reduced from 1024
+    num_segments: int = 8    # Reduced from 10
+    num_latents: int = 16    # Reduced from 32
 
     # Device
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -113,6 +113,7 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         hidden_size=config.hidden_size,
         num_mem_tokens=config.num_mem_tokens,
         vocab_size=config.vocab_size,
+        num_heads=config.num_heads,  # CRITICAL: Pass num_heads!
     ).to(device)
 
     # Config B: Unified ARMT (more layers)
@@ -121,6 +122,7 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         hidden_size=config.hidden_size,
         num_mem_tokens=config.num_mem_tokens,
         vocab_size=config.vocab_size,
+        num_heads=config.num_heads,  # CRITICAL: Pass num_heads!
     ).to(device)
 
     # Config C: Dual Architecture
@@ -129,10 +131,13 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         hidden_size=config.hidden_size,
         num_mem_tokens=config.num_mem_tokens,
         vocab_size=config.vocab_size,
+        num_heads=config.num_heads,  # CRITICAL: Pass num_heads!
     ).to(device)
 
     coprocessor = SimpleCoprocessor(
-        num_layers=config.coprocessor_layers, hidden_size=config.hidden_size
+        num_layers=config.coprocessor_layers, 
+        hidden_size=config.hidden_size,
+        num_heads=config.num_heads,  # CRITICAL: Pass num_heads!
     ).to(device)
 
     config_C = DualArchitectureARMT(
@@ -290,10 +295,15 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
 
         loss.backward()
         optimizer.step()
+        
+        # Clear GPU cache after each training step to prevent OOM
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
         return loss.item()
 
     print("\nTraining progress:")
+    print("(Training on reduced config for 12GB GPU: 512H, 6/9/3 layers, batch=2, seq=512)")
     for step in range(num_training_steps):
         # Rotate through tasks
         task_idx = step % 3
@@ -301,8 +311,11 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         if task_idx == 0:
             # Train on memory task
             loss_A = train_on_task(config_A, memory_context, memory_query, memory_metadata, "memory", optimizer_A)
+            torch.cuda.empty_cache()  # Clear after each model
             loss_B = train_on_task(config_B, memory_context, memory_query, memory_metadata, "memory", optimizer_B)
+            torch.cuda.empty_cache()
             loss_C = train_on_task(config_C, memory_context, memory_query, memory_metadata, "memory", optimizer_C, use_coprocessor=True)
+            torch.cuda.empty_cache()
 
             training_curves["config_A"]["memory"].append(loss_A)
             training_curves["config_B"]["memory"].append(loss_B)
@@ -311,8 +324,11 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         elif task_idx == 1:
             # Train on reasoning task
             loss_A = train_on_task(config_A, reasoning_context, reasoning_query, reasoning_labels, "reasoning", optimizer_A)
+            torch.cuda.empty_cache()
             loss_B = train_on_task(config_B, reasoning_context, reasoning_query, reasoning_labels, "reasoning", optimizer_B)
+            torch.cuda.empty_cache()
             loss_C = train_on_task(config_C, reasoning_context, reasoning_query, reasoning_labels, "reasoning", optimizer_C, use_coprocessor=True)
+            torch.cuda.empty_cache()
 
             training_curves["config_A"]["reasoning"].append(loss_A)
             training_curves["config_B"]["reasoning"].append(loss_B)
@@ -321,8 +337,11 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         else:
             # Train on multi-hop task
             loss_A = train_on_task(config_A, multihop_context, multihop_query, multihop_metadata, "multihop", optimizer_A)
+            torch.cuda.empty_cache()
             loss_B = train_on_task(config_B, multihop_context, multihop_query, multihop_metadata, "multihop", optimizer_B)
+            torch.cuda.empty_cache()
             loss_C = train_on_task(config_C, multihop_context, multihop_query, multihop_metadata, "multihop", optimizer_C, use_coprocessor=True)
+            torch.cuda.empty_cache()
 
             training_curves["config_A"]["multihop"].append(loss_A)
             training_curves["config_B"]["multihop"].append(loss_B)

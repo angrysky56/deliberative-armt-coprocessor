@@ -62,7 +62,9 @@ class SyntheticMemoryTask:
         """
         # Generate random base segments
         segments = []
-        marker_positions = {}
+        # Store marker info per batch element
+        batch_marker_positions = [[] for _ in range(batch_size)]
+        batch_marker_tokens = [[] for _ in range(batch_size)]
 
         for seg_idx in range(num_segments):
             segment = torch.randint(
@@ -76,11 +78,10 @@ class SyntheticMemoryTask:
                 marker_pos = segment_length // 2
                 segment[:, marker_pos] = marker_id
 
-                marker_positions[seg_idx] = {
-                    "marker_id": marker_id,
-                    "position": marker_pos,
-                    "segment": seg_idx,
-                }
+                # Store position and token for each batch element
+                for b in range(batch_size):
+                    batch_marker_positions[b].append(marker_pos)
+                    batch_marker_tokens[b].append(torch.tensor(marker_id, device=device))
 
             segments.append(segment)
 
@@ -91,7 +92,11 @@ class SyntheticMemoryTask:
             0, self.vocab_size, (batch_size, segment_length), device=device
         )
 
-        metadata = {"marker_positions": marker_positions, "markers": self.markers}
+        metadata = {
+            "marker_positions": batch_marker_positions,
+            "marker_tokens": batch_marker_tokens,
+            "markers": self.markers
+        }
 
         return segments, query_segment, metadata
 
