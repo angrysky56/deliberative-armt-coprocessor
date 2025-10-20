@@ -233,7 +233,7 @@ class MoEARMT(nn.Module):
         }
 
         if return_aux_losses and total_aux_loss > 0:
-            output["aux_loss"] = total_aux_loss
+            output["auxiliary_loss"] = total_aux_loss  # Match experiment key name
             output["layer_aux_losses"] = layer_aux_losses
 
         return output
