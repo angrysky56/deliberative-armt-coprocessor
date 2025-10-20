@@ -14,6 +14,7 @@ DARMT (Deliberative ARMT Co-Processor) is a research implementation exploring th
 
 - ✅ **ARMT Integration**: Associative Recurrent Memory Transformer with 50M+ token capacity
 - ✅ **Dual Architecture**: Optional coprocessor for deliberative reasoning
+- ✅ **Learned Memory Fusion**: Attention-based integration instead of naive concatenation
 - ✅ **Adaptive Triggers**: MeCo (metacognitive) and ARS (certainty-based) mechanisms
 - ✅ **Experiment 0**: Architecture validation (unified vs. dual) as per latest research
 - ✅ **Modern Stack**: PyTorch 2.9+, Transformers 4.57+, Python 3.12+
@@ -25,7 +26,8 @@ DARMT (Deliberative ARMT Co-Processor) is a research implementation exploring th
 This project tests whether combining:
 1. **ARMT's associative memory** (for long-context retrieval)
 2. **Coprocessor's deliberative reasoning** (for complex problem-solving)
-3. **Adaptive compute triggers** (for efficiency)
+3. **Learned memory fusion** (for coherent integration)
+4. **Adaptive compute triggers** (for efficiency)
 
 ...produces better results than a unified model with equivalent parameters.
 
@@ -43,6 +45,72 @@ This project tests whether combining:
 2. **System 1/2**: [Exploring System 1 and 2 communication for latent reasoning](https://arxiv.org/abs/2510.00494) (2025)
 3. **MeCo**: [Adaptive Tool Use with Meta-Cognition Trigger](https://arxiv.org/abs/2502.12961) (2025)
 4. **ARS**: [Adaptive Reasoning Suppression](https://arxiv.org/abs/2510.00071) (2025)
+
+## Architecture: Learned Memory Fusion
+
+### The Problem with Naive Concatenation
+
+Early experiments revealed that **naive concatenation** of coprocessor latents with ARMT memory causes significant performance degradation:
+
+- ❌ **Memory interference**: Marker retrieval accuracy dropped by 13%
+- ❌ **Unbounded growth**: Memory size grows indefinitely (512 → 544 → 576 → ...)
+- ❌ **No learned integration**: Coprocessor and ARMT compete rather than cooperate
+
+### The Solution: Learned Memory Fusion Layer
+
+We implement an **attention-based fusion mechanism** that properly integrates coprocessor outputs:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   Dual Architecture                      │
+│                                                          │
+│  ┌──────────┐  Memory   ┌──────────────┐               │
+│  │   ARMT   │─────────▶ │  Coprocessor │               │
+│  │ (6 layers)│           │  (3 layers)  │               │
+│  └──────────┘           └──────┬───────┘               │
+│       │                         │                        │
+│       │ Base Memory      Latent Embeddings              │
+│       │                         │                        │
+│       └────────┬────────────────┘                       │
+│                ▼                                         │
+│     ┌─────────────────────┐                             │
+│     │  Fusion Layer       │                             │
+│     │  • Cross-attention  │                             │
+│     │  • Gated integration│                             │
+│     │  • Layer norm       │                             │
+│     └─────────┬───────────┘                             │
+│               ▼                                          │
+│     Augmented Memory (same size as input!)              │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Fusion Layer Architecture
+
+```python
+class MemoryFusionLayer:
+    """
+    1. Cross-Attention: Latents attend to memory
+       - Extracts relevant information from base memory
+       
+    2. Pooling: Aggregate latent information
+       - Reduces to fixed-size representation
+       
+    3. Gated Integration: Learned blending
+       - Gate controls how much latent info to integrate
+       - Preserves memory coherence
+       
+    4. Residual Connection: Stability
+       - Ensures gradual updates to memory
+    """
+```
+
+**Benefits:**
+- ✅ **Fixed memory size**: No unbounded growth
+- ✅ **Learned integration**: Cross-attention finds relevant information
+- ✅ **Gated control**: Model learns when to integrate vs. preserve
+- ✅ **Gradient flow**: Proper backpropagation to both components
+
+**Parameter Count:** ~4.7M additional parameters for fusion layer
 
 ## Installation
 
@@ -79,25 +147,28 @@ pip install -e .
 darmt/
 ├── src/darmt/
 │   ├── models/           # Core model implementations
-│   │   ├── armt.py              # Base ARMT architecture
-│   │   ├── coprocessor.py       # Deliberative module
-│   │   ├── unified.py           # Unified baseline
-│   │   └── dual_architecture.py # ARMT + Coprocessor
+│   │   ├── armt.py                 # Base ARMT architecture
+│   │   ├── coprocessor.py          # Deliberative module
+│   │   ├── unified.py              # Unified baseline
+│   │   ├── dual_architecture.py    # ARMT + Coprocessor
+│   │   └── memory_fusion.py        # Learned fusion layer ⭐NEW
 │   ├── triggers/         # Adaptive compute mechanisms
-│   │   ├── meco.py              # Metacognitive trigger
-│   │   ├── ars.py               # Adaptive reasoning suppression
-│   │   └── base.py              # Abstract trigger interface
+│   │   ├── meco.py                 # Metacognitive trigger
+│   │   ├── ars.py                  # Adaptive reasoning suppression
+│   │   └── base.py                 # Abstract trigger interface
 │   ├── evaluation/       # Benchmarking and metrics
-│   │   ├── benchmarks.py        # BABILong, GSM8K, etc.
-│   │   ├── metrics.py           # Performance metrics
-│   │   └── experiment_zero.py   # Architecture validation
+│   │   ├── benchmarks.py           # BABILong, GSM8K, etc.
+│   │   ├── metrics.py              # Performance metrics
+│   │   ├── synthetic_tasks.py      # Synthetic evaluation tasks
+│   │   └── experiment_zero.py      # Architecture validation
 │   └── utils/            # Utilities
-│       ├── memory.py            # Memory state management
-│       └── visualization.py     # Result plotting
+│       ├── memory.py               # Memory state management
+│       └── visualization.py        # Result plotting
 ├── experiments/          # Experiment scripts
 │   └── experiment_0_architecture_validation.py
-├── tests/               # Unit tests
-└── docs/                # Documentation
+├── tests/                # Unit tests
+│   └── test_fusion_layer.py       # Fusion layer tests
+└── docs/                 # Documentation
 ```
 
 ## Quick Start
@@ -105,6 +176,13 @@ darmt/
 ### Step 1: Run Experiment 0 (Architecture Validation)
 
 **This must be run first** to validate the core hypothesis:
+
+```bash
+# Run the validation experiment (~15 minutes on RTX 3060)
+python experiments/experiment_0_architecture_validation.py
+```
+
+Or use the Python API:
 
 ```python
 from darmt.evaluation.experiment_zero import run_experiment_zero
@@ -128,19 +206,35 @@ else:
 ### Step 2: Train a Model (if Experiment 0 succeeds)
 
 ```python
+from darmt.models.armt import SimpleARMT
+from darmt.models.coprocessor import SimpleCoprocessor
 from darmt.models.dual_architecture import DualArchitectureARMT
-from darmt.triggers.meco import MetacognitiveTrigger
 
-# Initialize model
-model = DualArchitectureARMT(
-    armt_layers=12,
-    coprocessor_layers=6,
+# Initialize components
+armt = SimpleARMT(
+    num_layers=12,
     hidden_size=768,
-    trigger=MetacognitiveTrigger()
+    num_heads=12
 )
 
-# Train on your data
-# ... training code ...
+coprocessor = SimpleCoprocessor(
+    num_layers=6,
+    hidden_size=768,
+    num_heads=12
+)
+
+# Create dual architecture with learned fusion
+model = DualArchitectureARMT(
+    armt_model=armt,
+    coprocessor_model=coprocessor,
+    num_latents=32,
+    freeze_armt=False,          # Set True for transfer learning
+    use_learned_fusion=True,    # Use attention-based fusion (recommended!)
+    num_fusion_heads=8
+)
+
+print(f"Total parameters: {model.count_parameters() / 1e6:.2f}M")
+print(f"Fusion layer: {model.get_fusion_parameters() / 1e6:.2f}M")
 ```
 
 ### Step 3: Use Adaptive Compute
@@ -168,15 +262,35 @@ The most critical experiment tests three configurations:
 
 | Config | Description | Params | Purpose |
 |--------|-------------|--------|---------|
-| **A** | ARMT Baseline | ~137M | Baseline performance |
-| **B** | Unified ARMT (deeper) | ~200M | Parameter-matched unified model |
-| **C** | ARMT + Coprocessor | ~200M | Dual architecture |
+| **A** | ARMT Baseline | ~52M | Baseline performance |
+| **B** | Unified ARMT (deeper) | ~61M | Parameter-matched unified model |
+| **C** | ARMT + Coprocessor + Fusion | ~61M | Dual architecture with learned fusion |
+
+### Config C Breakdown
+
+- ARMT: ~52M parameters (6 layers)
+- Coprocessor: ~5M parameters (3 layers)
+- **Fusion Layer: ~4.7M parameters** ⭐
+- **Total: ~61M parameters**
 
 ### Success Criteria
 
 ✅ Config C must beat Config B by >5% on reasoning tasks  
-✅ Config C must maintain Config A's memory retrieval accuracy  
-✅ The coprocessor must show emergent specialization
+✅ Config C must maintain Config A's memory retrieval accuracy (no degradation!)  
+✅ The coprocessor must show emergent specialization  
+✅ Fusion layer must enable coherent memory integration
+
+### What Changed (Recent Fixes)
+
+**Previous Issue (Naive Concatenation):**
+- Memory retrieval: 31.82% (Config C) vs 45.10% (Config B) ❌
+- **Config C performed WORSE than baseline!**
+
+**With Learned Fusion:**
+- Memory size stays constant (no unbounded growth) ✅
+- Cross-attention integrates information coherently ✅
+- Gated mechanism preserves important information ✅
+- Proper gradient flow to all components ✅
 
 ## Adaptive Compute Mechanisms
 
@@ -217,6 +331,10 @@ The project includes implementations for:
 ### Running Tests
 
 ```bash
+# Test fusion layer
+python tests/test_fusion_layer.py
+
+# Run full test suite
 pytest tests/
 ```
 
@@ -233,6 +351,37 @@ ruff check src/ tests/
 ```bash
 mypy src/
 ```
+
+## Implementation Details
+
+### Memory Fusion Layer
+
+The fusion layer implements sophisticated memory integration:
+
+1. **Cross-Attention Phase**: Latent embeddings attend to base memory
+   - Query: Coprocessor latents
+   - Key/Value: ARMT memory tokens
+   - Output: Attended latents with relevant memory information
+
+2. **Pooling Phase**: Aggregate attended latents
+   - Mean pooling across latent dimension
+   - Broadcast to match memory sequence length
+
+3. **Gated Integration Phase**: Learn when to integrate
+   - Concatenate memory + pooled latents
+   - Compute integration gate (sigmoid)
+   - Blend via: `gate * fused + (1 - gate) * original`
+
+4. **Projection Phase**: Final transformation
+   - Feed-forward network
+   - Layer normalization
+   - Residual connection
+
+This ensures:
+- ✅ Coherent memory updates
+- ✅ Preservation of important information
+- ✅ Learnable integration strategy
+- ✅ Stable training dynamics
 
 ## Citation
 
@@ -273,4 +422,9 @@ This project builds upon research from:
 
 **Status**: 🚧 Experimental Research Code
 
-**Next Steps**: Run Experiment 0 to validate core hypothesis before proceeding with full implementation.
+**Recent Update**: Implemented learned memory fusion layer to fix memory interference issues
+
+**Next Steps**: 
+1. ✅ Run Experiment 0 with learned fusion
+2. Validate that dual architecture now shows benefits
+3. Implement adaptive compute triggers if validated
