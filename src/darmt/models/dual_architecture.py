@@ -2,7 +2,7 @@
 Dual Architecture: ARMT + Coprocessor.
 
 This combines the ARMT base model with a coprocessor for deliberative reasoning.
-The ARMT is frozen, and only the coprocessor is trained.
+The ARMT can be frozen (for transfer learning) or trainable (for end-to-end training).
 """
 
 import torch
@@ -16,18 +16,20 @@ from darmt.utils.memory import MemoryState, augment_memory_with_latents
 
 class DualArchitectureARMT(nn.Module):
     """
-    Dual architecture combining ARMT (frozen) + Coprocessor (trainable).
+    Dual architecture combining ARMT + Coprocessor.
 
     Architecture:
-    1. ARMT processes input and generates memory state (frozen)
-    2. Coprocessor deliberates on memory and generates latent embeddings (trainable)
+    1. ARMT processes input and generates memory state
+    2. Coprocessor deliberates on memory and generates latent embeddings
     3. Memory is augmented with latent embeddings
     4. Augmented memory used in next segment
 
-    Critical Design Decision:
-    - ARMT is frozen (no gradient updates)
-    - Only coprocessor is trained
-    - This matches the approach from Liu et al.'s KV-cache augmentation paper
+    Design Options:
+    - ARMT can be frozen (transfer learning: pretrained ARMT + train coprocessor)
+    - ARMT can be trainable (end-to-end training: train both components)
+    
+    For architectural comparison experiments (like Experiment 0), use trainable ARMT
+    to ensure fair comparison with unified models.
     """
 
     def __init__(
@@ -59,7 +61,7 @@ class DualArchitectureARMT(nn.Module):
         else:
             print("[Init] DualArchitectureARMT: ARMT is TRAINABLE (not recommended)")
 
-        print(f"[Init] DualArchitectureARMT: Coprocessor is TRAINABLE")
+        print("[Init] DualArchitectureARMT: Coprocessor is TRAINABLE")
 
     def forward(
         self,
@@ -82,8 +84,20 @@ class DualArchitectureARMT(nn.Module):
         Returns:
             Dictionary containing logits and updated memory state
         """
-        # Step 1: Process through ARMT (frozen)
-        with torch.no_grad() if not self.training else torch.enable_grad():
+        # Step 1: Process through ARMT
+        # Use no_grad only if ARMT is frozen AND not in training mode
+        armt_frozen = not any(p.requires_grad for p in self.armt.parameters())
+        
+        if armt_frozen:
+            with torch.no_grad():
+                armt_output = self.armt(
+                    input_ids,
+                    memory_state,
+                    return_hidden_states=return_hidden_states,
+                    return_attention_weights=return_attention_weights,
+                )
+        else:
+            # ARMT is trainable - compute with gradients
             armt_output = self.armt(
                 input_ids,
                 memory_state,
@@ -104,15 +118,14 @@ class DualArchitectureARMT(nn.Module):
                 kv_cache, self.num_latents
             )
 
-            # Augment memory with latent embeddings
+            # Augment memory with latent embeddings for next segment
+            # Note: We don't re-process current input with augmented memory
+            # because that would change the output logits shape
             augmented_memory = augment_memory_with_latents(base_memory_state, latent_embeddings)
 
-            # Step 3: Re-process with augmented memory (frozen ARMT)
-            with torch.no_grad():
-                final_output = self.armt(input_ids, augmented_memory)
-
-            final_memory_state = final_output["memory_state"]
-            final_logits = final_output["logits"]
+            # Use base logits but augmented memory for next segment
+            final_memory_state = augmented_memory
+            final_logits = logits
         else:
             # No coprocessor: use base ARMT output
             final_memory_state = base_memory_state

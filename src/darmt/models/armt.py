@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 from typing import Any
 
-from darmt.utils.memory import MemoryState, create_initial_memory
+from darmt.utils.memory import MemoryState
 
 
 class SimpleARMT(nn.Module):
@@ -102,7 +102,6 @@ class SimpleARMT(nn.Module):
                 - attention_weights: (optional) Attention weights
         """
         batch_size, seq_len = input_ids.shape
-        device = input_ids.device
 
         # Get input embeddings
         input_embeds = self.embedding(input_ids)
@@ -112,6 +111,9 @@ class SimpleARMT(nn.Module):
             mem_tokens_batch = self.mem_tokens.expand(batch_size, -1, -1)
         else:
             mem_tokens_batch = memory_state["memory_tokens"]
+            # If memory has been augmented with latents, only use the original memory tokens
+            if mem_tokens_batch.shape[1] > self.num_mem_tokens:
+                mem_tokens_batch = mem_tokens_batch[:, : self.num_mem_tokens, :]
             mem_tokens_batch = self.memory_norm(mem_tokens_batch)
 
         # Combine memory tokens with input embeddings
