@@ -35,7 +35,9 @@ def create_initial_memory(
 
 
 def augment_memory_with_latents(
-    memory_state: MemoryState, latent_embeddings: torch.Tensor
+    memory_state: MemoryState,
+    latent_embeddings: torch.Tensor,
+    fusion_layer=None,
 ) -> MemoryState:
     """
     Augment memory state with latent embeddings from coprocessor.
@@ -44,12 +46,20 @@ def augment_memory_with_latents(
         memory_state: Current memory state
         latent_embeddings: Latent embeddings from coprocessor
                           Shape: [batch, num_latents, hidden_size]
+        fusion_layer: Optional learned fusion layer for integration
+                     If None, falls back to naive concatenation (not recommended)
 
     Returns:
         Updated memory state with augmented memory tokens
     """
     current_memory = memory_state["memory_tokens"]
-    augmented_memory = torch.cat([current_memory, latent_embeddings], dim=1)
+    
+    if fusion_layer is not None:
+        # Use learned fusion (recommended)
+        augmented_memory = fusion_layer(current_memory, latent_embeddings)
+    else:
+        # Fallback: naive concatenation (causes performance issues)
+        augmented_memory = torch.cat([current_memory, latent_embeddings], dim=1)
 
     return {
         "memory_tokens": augmented_memory,

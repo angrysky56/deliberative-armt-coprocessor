@@ -164,6 +164,14 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
         f"Config C (Dual):          {params_C_total:>8.2f}M total "
         f"({params_C_trainable:>8.2f}M trainable)"
     )
+    
+    # Show detailed breakdown for Config C
+    armt_params = config_C.get_armt_parameters() / 1e6
+    coproc_params = config_C.get_coprocessor_parameters() / 1e6
+    fusion_params = config_C.get_fusion_parameters() / 1e6
+    print(f"  ├─ ARMT:               {armt_params:>8.2f}M")
+    print(f"  ├─ Coprocessor:        {coproc_params - fusion_params:>8.2f}M")
+    print(f"  └─ Fusion Layer:       {fusion_params:>8.2f}M")
 
     # Verify parameter matching
     total_B = params_B

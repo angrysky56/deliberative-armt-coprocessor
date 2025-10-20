@@ -11,6 +11,7 @@ from typing import Any
 
 from darmt.models.armt import SimpleARMT
 from darmt.models.coprocessor import SimpleCoprocessor
+from darmt.models.memory_fusion import MemoryFusionLayer
 from darmt.utils.memory import MemoryState, augment_memory_with_latents
 
 
@@ -38,6 +39,8 @@ class DualArchitectureARMT(nn.Module):
         coprocessor_model: SimpleCoprocessor,
         num_latents: int = 32,
         freeze_armt: bool = True,
+        use_learned_fusion: bool = True,
+        num_fusion_heads: int = 8,
     ) -> None:
         """
         Initialize DualArchitectureARMT.
@@ -47,11 +50,26 @@ class DualArchitectureARMT(nn.Module):
             coprocessor_model: Pre-initialized coprocessor model
             num_latents: Number of latent embeddings to generate
             freeze_armt: Whether to freeze ARMT parameters (recommended)
+            use_learned_fusion: Whether to use learned memory fusion (recommended)
+            num_fusion_heads: Number of attention heads in fusion layer
         """
         super().__init__()
         self.armt = armt_model
         self.coprocessor = coprocessor_model
         self.num_latents = num_latents
+        self.use_learned_fusion = use_learned_fusion
+
+        # Initialize memory fusion layer
+        if use_learned_fusion:
+            self.fusion_layer = MemoryFusionLayer(
+                hidden_size=armt_model.hidden_size,
+                num_attention_heads=num_fusion_heads,
+                dropout=0.1,
+            )
+            print("[Init] DualArchitectureARMT: Using LEARNED memory fusion")
+        else:
+            self.fusion_layer = None
+            print("[Init] DualArchitectureARMT: Using NAIVE concatenation (not recommended)")
 
         # Freeze ARMT if specified
         if freeze_armt:
@@ -118,10 +136,10 @@ class DualArchitectureARMT(nn.Module):
                 kv_cache, self.num_latents
             )
 
-            # Augment memory with latent embeddings for next segment
-            # Note: We don't re-process current input with augmented memory
-            # because that would change the output logits shape
-            augmented_memory = augment_memory_with_latents(base_memory_state, latent_embeddings)
+            # Augment memory with latent embeddings using learned fusion
+            augmented_memory = augment_memory_with_latents(
+                base_memory_state, latent_embeddings, fusion_layer=self.fusion_layer
+            )
 
             # Use base logits but augmented memory for next segment
             final_memory_state = augmented_memory
@@ -162,5 +180,15 @@ class DualArchitectureARMT(nn.Module):
         return sum(p.numel() for p in self.armt.parameters())
 
     def get_coprocessor_parameters(self) -> int:
-        """Count coprocessor parameters."""
-        return sum(p.numel() for p in self.coprocessor.parameters())
+        """Count coprocessor parameters (including fusion layer)."""
+        coprocessor_params = sum(p.numel() for p in self.coprocessor.parameters())
+        if self.fusion_layer is not None:
+            fusion_params = sum(p.numel() for p in self.fusion_layer.parameters())
+            return coprocessor_params + fusion_params
+        return coprocessor_params
+    
+    def get_fusion_parameters(self) -> int:
+        """Count fusion layer parameters."""
+        if self.fusion_layer is not None:
+            return sum(p.numel() for p in self.fusion_layer.parameters())
+        return 0

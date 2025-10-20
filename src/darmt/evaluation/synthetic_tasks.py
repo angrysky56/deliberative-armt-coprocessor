@@ -348,7 +348,21 @@ class MultiHopReasoningTask:
             0, self.vocab_size, (batch_size, segment_length), device=device
         )
 
-        metadata = {"facts": facts, "expected_sum": sum(f["value"] for f in facts.values())}
+        # Calculate expected answer (sum of all facts)
+        expected_sum = sum(f["value"] for f in facts.values())
+        answer_token = self.number_token_start + expected_sum
+        answer_position = segment_length // 2  # Position where answer should appear
+        
+        # Format for training: lists indexed by batch element
+        answer_positions = [answer_position] * batch_size
+        answer_tokens = [torch.tensor(answer_token, device=device) for _ in range(batch_size)]
+
+        metadata = {
+            "facts": facts,
+            "expected_sum": expected_sum,
+            "answer_positions": answer_positions,
+            "answer_tokens": answer_tokens
+        }
 
         return segments, query_segment, metadata
 
