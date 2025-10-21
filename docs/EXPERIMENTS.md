@@ -200,7 +200,9 @@ With MoE:
 
 **Research Question**: What is the geometric root cause of MoE's catastrophic failure?
 
-**Methodology**: Trajectory analysis using Reasoning-Flow framework to analyze information geometry
+**Framework**: ["The Geometry of Reasoning: Flowing Logics in Representation Space"](https://arxiv.org/abs/2510.09782) (Zhou et al., 2025)
+
+**Methodology**: Applied geometric trajectory analysis from the Reasoning-Flow framework to analyze information geometry in different architectures. Code and methodology adapted from [Reasoning-Flow GitHub](https://github.com/MasterZhou1/Reasoning-Flow).
 
 ### Key Findings
 
@@ -451,9 +453,9 @@ Config D (MoE):
 
 ---
 
-## Citation
+## References
 
-If you reference these findings:
+This work builds on the following research:
 
 ```bibtex
 @misc{darmt2025experiments,
@@ -462,6 +464,31 @@ If you reference these findings:
     author={DARMT Project},
     year={2025},
     note={Experiments showing unified models outperform dual and MoE alternatives}
+}
+
+@article{zhou2025geometry,
+    title={The Geometry of Reasoning: Flowing Logics in Representation Space},
+    author={Zhou, Yufa and Wang, Yixiao and Yin, Xunjian and Zhou, Shuyan and Zhang, Anru R.},
+    journal={arXiv preprint arXiv:2510.09782},
+    year={2025},
+    url={https://arxiv.org/abs/2510.09782},
+    note={Geometric framework and methodology used in Experiment 3}
+}
+
+@article{rodkin2024armt,
+    title={Associative Recurrent Memory Transformer},
+    author={Rodkin, Ivan and Kuratov, Yuri and Bulatov, Aydar and Burtsev, Mikhail},
+    journal={arXiv preprint arXiv:2407.04841},
+    year={2024},
+    url={https://arxiv.org/abs/2407.04841}
+}
+
+@article{moniri2024system,
+    title={Exploring System 1 and 2 communication for latent reasoning},
+    author={Moniri, Amin and Perera, Ian and Kalyan, Ashwin and others},
+    journal={arXiv preprint arXiv:2510.00494},
+    year={2024},
+    url={https://arxiv.org/abs/2510.00494}
 }
 ```
 

@@ -57,6 +57,8 @@ This project began by testing two alternative architectures (dual ARMT+Coprocess
 
 **Tested**: Trajectory analysis using Reasoning-Flow framework to understand architectural differences
 
+**Methodology**: Applied geometric analysis framework from ["The Geometry of Reasoning: Flowing Logics in Representation Space"](https://arxiv.org/abs/2510.09782) (Zhou et al., 2025) to analyze memory token trajectories across layers.
+
 Using geometric analysis of memory token trajectories across layers, we discovered the **root cause** of MoE's failure:
 
 #### Task Coherence (Order-0 Semantic Clustering)
@@ -579,12 +581,20 @@ If you use this work, please cite:
     note={Experimental validation of unified vs dual/MoE architectures}
 }
 
-@misc{rodkin2024armt,
+@article{rodkin2024armt,
     title={Associative Recurrent Memory Transformer},
     author={Ivan Rodkin and Yuri Kuratov and Aydar Bulatov and Mikhail Burtsev},
     year={2024},
     eprint={2407.04841},
     archivePrefix={arXiv}
+}
+
+@article{zhou2025geometry,
+    title={The Geometry of Reasoning: Flowing Logics in Representation Space},
+    author={Zhou, Yufa and Wang, Yixiao and Yin, Xunjian and Zhou, Shuyan and Zhang, Anru R.},
+    journal={arXiv preprint arXiv:2510.09782},
+    year={2025},
+    note={Geometric framework used in Experiment 3}
 }
 ```
 
@@ -603,9 +613,15 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
-- **ARMT team** for the foundational architecture
-- **System 1/2 paper** for validating unified approaches
-- **OpenMoE research** for MoE insights (showing where it doesn't work!)
+This project builds on and acknowledges the following research:
+
+- **Reasoning-Flow Framework** ([Zhou et al., 2025](https://arxiv.org/abs/2510.09782)) - Geometric analysis framework and methodology used in Experiment 3. Their code for trajectory analysis and similarity computation was adapted for our architecture comparison. [GitHub](https://github.com/MasterZhou1/Reasoning-Flow)
+
+- **ARMT Architecture** ([Rodkin et al., 2024](https://arxiv.org/abs/2407.04841)) - Foundational associative memory transformer architecture
+
+- **System 1/2 Research** ([Moniri et al., 2024](https://arxiv.org/abs/2510.00494)) - Validation that unified models can match dual architectures
+
+- **MoE Scaling Research** - Insights on where sparse routing works (and doesn't work) for memory-augmented reasoning
 
 ---
 

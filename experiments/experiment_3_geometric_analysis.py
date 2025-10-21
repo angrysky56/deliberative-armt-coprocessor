@@ -4,6 +4,18 @@ Experiment 3: Geometric Analysis of Unified vs Alternative Architectures
 Uses Reasoning-Flow framework to understand WHY unified ARMT outperforms
 MoE and dual architectures through geometric trajectory analysis.
 
+Based on:
+    "The Geometry of Reasoning: Flowing Logics in Representation Space"
+    Zhou, Yufa and Wang, Yixiao and Yin, Xunjian and Zhou, Shuyan and Zhang, Anru R.
+    arXiv preprint arXiv:2510.09782, 2025
+    https://arxiv.org/abs/2510.09782
+    https://github.com/MasterZhou1/Reasoning-Flow
+
+Methodology adapted from their geometric analysis framework:
+    - Order-0 (positions): Semantic clustering via cosine similarity
+    - Order-1 (velocities): Information flow via consecutive differences
+    - Order-2 (curvature): Trajectory smoothness via Menger curvature
+
 Research Questions:
 1. Why does unified architecture outperform MoE? (trajectory smoothness)
 2. How do memory tokens organize geometrically? (clustering patterns)

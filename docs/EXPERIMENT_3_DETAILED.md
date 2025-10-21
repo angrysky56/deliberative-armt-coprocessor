@@ -8,13 +8,15 @@
 
 **Hypothesis**: Expert routing fragments representation space, destroying task coherence
 
-**Inspiration**: [Reasoning-Flow Framework](https://arxiv.org/abs/2410.13329) for analyzing information geometry
+**Framework**: ["The Geometry of Reasoning: Flowing Logics in Representation Space"](https://arxiv.org/abs/2510.09782) (Zhou et al., 2025, Duke University)
+
+**Attribution**: This experiment applies the geometric analysis methodology from the Reasoning-Flow framework. We adapted their trajectory analysis code and similarity computation methods for architecture comparison. The conceptual framework of analyzing reasoning through order-0 (positions), order-1 (velocities), and order-2 (curvature) metrics is from their work.
 
 ### Methodology
 
 Using trajectory analysis from the Reasoning-Flow framework, we extracted memory token hidden states across layers to understand how different architectures organize information geometrically.
 
-**Analysis Approach**:
+**Analysis Approach** (adapted from Zhou et al., 2025):
 1. Extract memory token trajectories from layers [0, 3, 6, 9]
 2. Compute three orders of geometric metrics:
    - **Order-0** (Positions): Semantic clustering via cosine similarity

@@ -214,7 +214,32 @@ After comprehensive experimental validation (3 experiments, 200+ training steps 
     note={Three experiments with geometric analysis proving unified 
           superiority over dual and MoE alternatives}
 }
+
+@article{zhou2025geometry,
+    title={The Geometry of Reasoning: Flowing Logics in Representation Space},
+    author={Zhou, Yufa and Wang, Yixiao and Yin, Xunjian and Zhou, Shuyan and Zhang, Anru R.},
+    journal={arXiv preprint arXiv:2510.09782},
+    year={2025},
+    note={Geometric framework used in Experiment 3}
+}
+
+@article{rodkin2024armt,
+    title={Associative Recurrent Memory Transformer},
+    author={Rodkin, Ivan and Kuratov, Yuri and Bulatov, Aydar and Burtsev, Mikhail},
+    journal={arXiv preprint arXiv:2407.04841},
+    year={2024}
+}
 ```
+
+## Acknowledgments
+
+This project builds upon and acknowledges the following research:
+
+- **Reasoning-Flow** ([Zhou et al., 2025](https://arxiv.org/abs/2510.09782)) - Geometric analysis framework and code adapted for Experiment 3. Their methodology for analyzing reasoning flows through order-0, order-1, and order-2 metrics was instrumental in proving why unified architectures outperform MoE. [GitHub Repository](https://github.com/MasterZhou1/Reasoning-Flow)
+
+- **ARMT** ([Rodkin et al., 2024](https://arxiv.org/abs/2407.04841)) - Foundational associative memory transformer architecture
+
+- **System 1/2 Research** ([Moniri et al., 2024](https://arxiv.org/abs/2510.00494)) - Validated that unified models can match dual architectures
 
 ---
 
