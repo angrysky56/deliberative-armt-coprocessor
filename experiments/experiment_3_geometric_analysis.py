@@ -191,33 +191,39 @@ def extract_memory_trajectories(
 
     # Register hooks on specified layers
     handles = []
-    
+
     # Try to get layers - handle both ModuleList and TransformerEncoder
-    layers = None
+    layers: List[torch.nn.Module] = []
     if hasattr(model, "layers"):
-        # MoE-style: self.layers = nn.ModuleList()
-        layers = model.layers
-    elif hasattr(model, "transformer"):
-        # Unified/SimpleARMT style: self.transformer = nn.TransformerEncoder()
-        if hasattr(model.transformer, "layers"):
-            layers = model.transformer.layers
-        else:
-            # Access internal layers from TransformerEncoder
-            layers = list(model.transformer.children())
-    
+        candidate_layers = getattr(model, "layers")
+        if isinstance(candidate_layers, torch.nn.ModuleList):
+            layers = list(candidate_layers)
+        elif isinstance(candidate_layers, (list, tuple)):
+            layers = [module for module in candidate_layers if isinstance(module, torch.nn.Module)]
+    if not layers:
+        transformer = getattr(model, "transformer", None)
+        if isinstance(transformer, torch.nn.Module):
+            transformer_layers = getattr(transformer, "layers", None)
+            if isinstance(transformer_layers, torch.nn.ModuleList):
+                layers = list(transformer_layers)
+            elif isinstance(transformer_layers, (list, tuple)):
+                layers = [module for module in transformer_layers if isinstance(module, torch.nn.Module)]
+            else:
+                layers = [module for module in transformer.children() if isinstance(module, torch.nn.Module)]
+
     # Determine which layers to extract
     layer_indices: List[int] = []
-    if layers is not None and len(layers) > 0:
+    if layers:
         if extract_layers is None:
             layer_indices = list(range(len(layers)))
         else:
             layer_indices = [idx for idx in extract_layers if idx < len(layers)]
-        
+
         # Register hooks
         for layer_idx in layer_indices:
             handle = layers[layer_idx].register_forward_hook(make_hook(layer_idx))
             handles.append(handle)
-    
+
     # Forward pass
     output = model(input_ids, memory_state)
 
