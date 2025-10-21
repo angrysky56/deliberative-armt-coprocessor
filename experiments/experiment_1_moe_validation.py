@@ -383,6 +383,36 @@ def run_experiment_one(config: Experiment1Config | None = None) -> dict:
     config_B.eval()
     config_D.eval()
 
+    # Save trained checkpoints for future analysis (e.g., Experiment 3)
+    print("\n[Saving Trained Models]")
+    print("-" * 80)
+    import os
+    from pathlib import Path
+
+    checkpoint_dir = Path("checkpoints")
+    checkpoint_dir.mkdir(exist_ok=True)
+
+    # Save baseline (Config A) - only if not already saved by Experiment 0
+    baseline_path = checkpoint_dir / "baseline_exp0.pt"
+    if not baseline_path.exists():
+        torch.save(config_A.state_dict(), baseline_path)
+        print(f"✓ Saved baseline model: {baseline_path}")
+    else:
+        print(f"  (baseline checkpoint already exists from Experiment 0)")
+
+    # Save unified (Config B) - only if not already saved by Experiment 0
+    unified_path = checkpoint_dir / "unified_exp0.pt"
+    if not unified_path.exists():
+        torch.save(config_B.state_dict(), unified_path)
+        print(f"✓ Saved unified model: {unified_path}")
+    else:
+        print(f"  (unified checkpoint already exists from Experiment 0)")
+
+    # Save MoE model (Config D) - this is unique to Experiment 1
+    moe_path = checkpoint_dir / "moe_exp1.pt"
+    torch.save(config_D.state_dict(), moe_path)
+    print(f"✓ Saved MoE model: {moe_path}")
+
     # -------------------------------------------------------------------------
     # Step 5: Run evaluations on synthetic tasks
     # -------------------------------------------------------------------------

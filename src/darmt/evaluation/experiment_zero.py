@@ -396,6 +396,31 @@ def run_experiment_zero(config: Experiment0Config | None = None) -> dict[str, An
     config_B.eval()
     config_C.eval()
 
+    # Save trained checkpoints for future analysis (e.g., Experiment 3)
+    print("\n[Saving Trained Models]")
+    print("-" * 80)
+    import os
+    from pathlib import Path
+
+    checkpoint_dir = Path("checkpoints")
+    checkpoint_dir.mkdir(exist_ok=True)
+
+    # Save baseline (Config A)
+    baseline_path = checkpoint_dir / "baseline_exp0.pt"
+    torch.save(config_A.state_dict(), baseline_path)
+    print(f"✓ Saved baseline model: {baseline_path}")
+
+    # Save unified (Config B)
+    unified_path = checkpoint_dir / "unified_exp0.pt"
+    torch.save(config_B.state_dict(), unified_path)
+    print(f"✓ Saved unified model: {unified_path}")
+
+    # Save dual architecture (Config C)
+    # Note: For dual architecture, we save the entire model state
+    dual_path = checkpoint_dir / "dual_exp0.pt"
+    torch.save(config_C.state_dict(), dual_path)
+    print(f"✓ Saved dual model: {dual_path}")
+
     # -------------------------------------------------------------------------
     # Step 5: Run evaluations on synthetic tasks
     # -------------------------------------------------------------------------

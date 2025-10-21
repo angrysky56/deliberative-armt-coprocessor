@@ -191,18 +191,33 @@ def extract_memory_trajectories(
 
     # Register hooks on specified layers
     handles = []
-    layers = getattr(model, "layers", None)
-    layer_indices: List[int] = (
-        list(range(len(layers)))
-        if extract_layers is None and isinstance(layers, (torch.nn.ModuleList, list, tuple))
-        else (extract_layers or [])
-    )
-    if isinstance(layers, (torch.nn.ModuleList, list, tuple)):
+    
+    # Try to get layers - handle both ModuleList and TransformerEncoder
+    layers = None
+    if hasattr(model, "layers"):
+        # MoE-style: self.layers = nn.ModuleList()
+        layers = model.layers
+    elif hasattr(model, "transformer"):
+        # Unified/SimpleARMT style: self.transformer = nn.TransformerEncoder()
+        if hasattr(model.transformer, "layers"):
+            layers = model.transformer.layers
+        else:
+            # Access internal layers from TransformerEncoder
+            layers = list(model.transformer.children())
+    
+    # Determine which layers to extract
+    layer_indices: List[int] = []
+    if layers is not None and len(layers) > 0:
+        if extract_layers is None:
+            layer_indices = list(range(len(layers)))
+        else:
+            layer_indices = [idx for idx in extract_layers if idx < len(layers)]
+        
+        # Register hooks
         for layer_idx in layer_indices:
-            if layer_idx < len(layers):
-                handle = layers[layer_idx].register_forward_hook(make_hook(layer_idx))
-                handles.append(handle)
-
+            handle = layers[layer_idx].register_forward_hook(make_hook(layer_idx))
+            handles.append(handle)
+    
     # Forward pass
     output = model(input_ids, memory_state)
 
