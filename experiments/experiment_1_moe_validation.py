@@ -30,9 +30,9 @@ from darmt.evaluation.synthetic_tasks import (
 class Experiment1Config:
     """Configuration for MoE validation experiment."""
 
-    # Model architecture
+    # Model architecture (MUST match Experiment 0!)
     hidden_size: int = 512
-    num_heads: int = 16
+    num_heads: int = 8  # Match Experiment 0
     intermediate_size: int = 2048
     num_mem_tokens: int = 16
 
@@ -51,7 +51,7 @@ class Experiment1Config:
     batch_size: int = 2
     segment_length: int = 512
     num_segments: int = 8
-    vocab_size: int = 5000
+    vocab_size: int = 32000  # Match Experiment 0
 
     # Training steps
     num_training_steps: int = 200

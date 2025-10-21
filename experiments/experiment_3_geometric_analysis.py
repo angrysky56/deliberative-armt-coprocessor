@@ -39,16 +39,16 @@ from darmt.analysis.utils_stat import (
 class GeometricAnalysisConfig:
     """Configuration for geometric analysis experiment."""
 
-    # Model architecture
+    # Model architecture (MUST match Experiments 0 and 1!)
     hidden_size: int = 512
-    num_heads: int = 16
+    num_heads: int = 8  # Match Experiment 0
     num_mem_tokens: int = 16
 
     # Task configuration
     batch_size: int = 2
     segment_length: int = 512
     num_segments: int = 8
-    vocab_size: int = 5000
+    vocab_size: int = 32000  # Match Experiment 0
 
     # Analysis configuration
     extract_layers: Optional[List[int]] = None  # Which layers to extract (None = all)
